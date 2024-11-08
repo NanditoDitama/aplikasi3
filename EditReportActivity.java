@@ -32,12 +32,14 @@ import com.bumptech.glide.request.transition.Transition;
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
@@ -119,30 +121,24 @@ public class EditReportActivity extends AppCompatActivity {
             if (task.isSuccessful() && task.getResult() != null) {
                 currentReport = task.getResult().toObject(Report.class);
                 if (currentReport != null) {
-                    editTextTitle.setText(currentReport.getTitle());
-                    editTextDescription.setText(currentReport.getDescription());
-                    editTextAmount.setText(String.valueOf(currentReport.getAmount()));
-
-                    if (currentReport.getDate() != null) {
-                        selectedDate.setTime(currentReport.getDate());
-                        updateDateButtonText();
-                    }
-
-                    if (currentReport.getImageUrl() != null && !currentReport.getImageUrl().isEmpty()) {
-                        Glide.with(this)
-                                .load(currentReport.getImageUrl())
-                                .into(imageViewPreview);
-                        openEnlargedImage.setVisibility(View.VISIBLE); // Tampilkan icon zoom
-                        setupImageClickListeners();
-                        setupZoomFeature();
-                    }
-                } else {
-                    Toast.makeText(this, "Report data is null", Toast.LENGTH_SHORT).show();
-                    finish();
+                    // Cek apakah ada alasan penolakan
+                    db.collection("rejectedReports")
+                            .whereEqualTo("id", reportId)
+                            .get()
+                            .addOnSuccessListener(queryDocumentSnapshots -> {
+                                if (!queryDocumentSnapshots.isEmpty()) {
+                                    DocumentSnapshot rejectionDoc = queryDocumentSnapshots.getDocuments().get(0);
+                                    String rejectionReason = rejectionDoc.getString("rejectionReason");
+                                    if (rejectionReason != null) {
+                                        textViewRejectionReason.setText("Alasan Penolakan: " + rejectionReason);
+                                    }
+                                }
+                            });
+                    // Set data lainnya
+                    textViewTitle.setText(currentReport.getTitle());
+                    textViewDate.setText(new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(currentReport.getDate()));
+                    // Set status dan tombol sesuai dengan status
                 }
-            } else {
-                Toast.makeText(this, "Failed to load report data", Toast.LENGTH_SHORT).show();
-                finish();
             }
         });
     }

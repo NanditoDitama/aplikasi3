@@ -23,7 +23,7 @@ public class Report implements Parcelable {
     private Timestamp timestamp;
     private boolean isReadRecipient;
     private boolean isReadSender;
-
+    private String status;
     // Konstruktor kosong untuk Firestore
     public Report() {
     }
@@ -214,5 +214,12 @@ public class Report implements Parcelable {
 
     public void setReadRecipient(boolean read) {
         this.isReadRecipient = read;
+    }
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 }

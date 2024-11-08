@@ -55,32 +55,23 @@ public class ReportAdapter extends BaseAdapter {
 
         Report report = reportList.get(position);
 
-        // Set data ke view
         if (report != null) {
-            holder.textViewTitle.setText(report.getTitle());
-            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
-            holder.textViewDate.setText(sdf.format(report.getDate()));
-
-            // Listener untuk seluruh item
-            convertView.setOnClickListener(v -> {
-                if (listener != null) {
-                    listener.onItemClick(report);
-                }
-            });
-
-            // Listener untuk tombol delete
-            holder.buttonDelete.setOnClickListener(v -> {
-                if (listener != null) {
-                    listener.onDeleteClick(report);
-                }
-            });
-
-            // Listener untuk tombol edit
-            holder.buttonEdit.setOnClickListener(v -> {
-                if (listener != null) {
-                    listener.onEditClick(report);
-                }
-            });
+            // Tampilkan status
+            if ("pending".equals(report.getStatus())) {
+                holder.textViewTitle.setText("Menunggu Persetujuan");
+                holder.textViewDate.setText("Status: Pending");
+                holder.buttonEdit.setVisibility(View.GONE);
+            } else if ("approved".equals(report.getStatus())) {
+                holder.textViewTitle.setText(report.getTitle());
+                SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
+                holder.textViewDate.setText(sdf.format(report.getDate()));
+                holder.buttonEdit.setVisibility(View.GONE);
+            } else if ("rejected".equals(report.getStatus())) {
+                holder.textViewTitle.setText(report.getTitle());
+                SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
+                holder.textViewDate.setText(sdf.format(report.getDate()));
+                holder.buttonEdit.setVisibility(View.VISIBLE);
+            }
         }
 
         return convertView;

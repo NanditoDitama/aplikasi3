@@ -43,6 +43,7 @@ import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.UUID;
 
 import android.Manifest;
@@ -298,12 +299,30 @@ public class AddReportActivity extends AppCompatActivity {
         String userId = mAuth.getCurrentUser().getUid();
         String reportId = UUID.randomUUID().toString();
 
-        // Menambahkan null sebagai recipientId karena ini laporan baru
-        Report report = new Report(reportId, title, description, amount, date.toDate(), imageUrl, userId, null);
+        // Buat approval request sebagai pengganti langsung menyimpan laporan
+        ApprovalRequest approvalRequest = new ApprovalRequest(
+                UUID.randomUUID().toString(), // request ID
+                userId,
+                mAuth.getCurrentUser().getDisplayName(),
+                "new", // tipe request
+                new HashMap<String, Object>() {{
+                    put("id", reportId);
+                    put("title", title);
+                    put("description", description);
+                    put("amount", amount);
+                    put("date", date.toDate());
+                    put("imageUrl", imageUrl);
+                    put("userId", userId);
+                    put("status", "pending");
+                }},
+                new Date(),
+                "pending"
+        );
 
-        db.collection("reports")
-                .document(reportId)
-                .set(report)
+        // Simpan ke collection approvalRequests
+        db.collection("approvalRequests")
+                .document(approvalRequest.getId())
+                .set(approvalRequest)
                 .addOnSuccessListener(aVoid -> {
                     // Tambahkan history
                     String historyId = UUID.randomUUID().toString();
@@ -311,7 +330,7 @@ public class AddReportActivity extends AppCompatActivity {
                             historyId,
                             reportId,
                             userId,
-                            "sent",
+                            "pending",
                             new Date()
                     );
 
@@ -321,14 +340,14 @@ public class AddReportActivity extends AppCompatActivity {
                             .addOnSuccessListener(aVoid2 -> {
                                 progressBar.setVisibility(View.GONE);
                                 buttonSubmitReport.setEnabled(true);
-                                Toast.makeText(this, "Laporan berhasil disimpan", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(this, "Laporan menunggu persetujuan", Toast.LENGTH_SHORT).show();
                                 finish();
                             });
                 })
                 .addOnFailureListener(e -> {
                     progressBar.setVisibility(View.GONE);
                     buttonSubmitReport.setEnabled(true);
-                    Toast.makeText(this, "Gagal menyimpan laporan: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Gagal membuat permintaan: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
     }
 

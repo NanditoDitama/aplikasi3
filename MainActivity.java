@@ -409,13 +409,11 @@ public class MainActivity extends AppCompatActivity {
 
         String userId = currentUser.getUid();
         reportListener = db.collection("reports")
-                .whereEqualTo("userId", userId) // Pastikan ini ada
+                .whereEqualTo("userId", userId)
                 .orderBy("date", Query.Direction.DESCENDING)
-                .limit(100)
                 .addSnapshotListener((value, error) -> {
                     if (error != null) {
                         Log.e(TAG, "Error fetching reports: ", error);
-                        Toast.makeText(MainActivity.this, "Gagal mengambil laporan: " + error.getMessage(), Toast.LENGTH_SHORT).show();
                         return;
                     }
 
@@ -424,18 +422,12 @@ public class MainActivity extends AppCompatActivity {
                         for (QueryDocumentSnapshot document : value) {
                             Report report = document.toObject(Report.class);
                             report.setId(document.getId());
+
+                            // Tambahkan pengecekan status
+                            String status = document.getString("status");
+                            report.setStatus(status != null ? status : "pending");
+
                             reportsList.add(report);
-                        }
-                        // Periksa apakah jumlah data mencapai limit
-                        if (value.size() >= 100) {
-                            showLimitReachedDialog();
-                            // Nonaktifkan FAB untuk menambah laporan baru
-                            fabAddReport.setEnabled(false);
-                            fabAddReport.setAlpha(0.5f);
-                        } else {
-                            // Aktifkan kembali FAB jika jumlah data di bawah limit
-                            fabAddReport.setEnabled(true);
-                            fabAddReport.setAlpha(1.0f);
                         }
                     }
                     adapter.notifyDataSetChanged();

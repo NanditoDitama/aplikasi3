@@ -1,8 +1,10 @@
 package com.example.laporan2;
 
+import android.app.AlertDialog;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -192,6 +194,16 @@ public class RequestDetailActivity extends AppCompatActivity {
     }
 
     private void processRequest(boolean isApproved) {
+
+        if (!isApproved) {
+            // Tampilkan dialog input alasan
+            showRejectionReasonDialog();
+        } else {
+            // Proses persetujuan
+            approveRequest();
+        }
+
+
         if (currentRequest == null) return;
 
         // Cek tipe request
@@ -239,6 +251,42 @@ public class RequestDetailActivity extends AppCompatActivity {
                 .addOnSuccessListener(aVoid -> {
                     // Redirect atau finish
                     Toast.makeText(this, "Report approved", Toast.LENGTH_SHORT).show();
+                    finish();
+                });
+    }
+    private void showRejectionReasonDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Alasan Penolakan");
+
+        // Buat EditText untuk alasan
+        final EditText input = new EditText(this);
+        input.setHint("Masukkan alasan penolakan");
+        builder.setView(input);
+
+        builder.setPositiveButton("Tolak", (dialog, which) -> {
+            String reason = input.getText().toString().trim();
+            rejectRequest(reason);
+        });
+
+        builder.setNegativeButton("Batal", null);
+        builder.show();
+    }
+
+    private void rejectRequest(String reason) {
+        // Simpan laporan ke rejected dengan alasan
+        Map<String, Object> rejectedData = new HashMap<>(currentRequest.getReportData());
+        rejectedData.put("rejectionReason", reason);
+
+        db.collection("rejectedReports")
+                .document(currentRequest.getId())
+                .set(rejectedData)
+                .addOnSuccessListener(aVoid -> {
+                    // Hapus dari approval requests
+                    db.collection("approvalRequests")
+                            .document(currentRequest.getId())
+                            .delete();
+
+                    Toast.makeText(this, "Laporan ditolak", Toast.LENGTH_SHORT).show();
                     finish();
                 });
     }
