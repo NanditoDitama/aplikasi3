@@ -401,13 +401,30 @@ public class MainActivity extends AppCompatActivity {
 
     private void fetchReports() {
         FirebaseUser currentUser = mAuth.getCurrentUser();
-        if (currentUser == null) {
-            Log.e(TAG, "No user is currently logged in");
-            Toast.makeText(MainActivity.this, "Silakan login terlebih dahulu", Toast.LENGTH_SHORT).show();
-            return;
-        }
+        if (currentUser == null) return;
 
         String userId = currentUser.getUid();
+        reportListener = db.collection("reports")
+                .whereEqualTo("userId", userId)
+                .whereEqualTo("status", "approved") // Hanya tampilkan laporan yang disetujui
+                .orderBy("date", Query.Direction.DESCENDING)
+                .addSnapshotListener((value, error) -> {
+                    if (error != null) {
+                        Log.e(TAG, "Error fetching reports", error);
+                        return;
+                    }
+
+                    reportsList.clear();
+                    if (value != null && !value.isEmpty()) {
+                        for (QueryDocumentSnapshot document : value) {
+                            Report report = document.toObject(Report.class);
+                            reportsList.add(report);
+                        }
+                    }
+                    adapter.notifyDataSetChanged();
+                });
+
+
         reportListener = db.collection("reports")
                 .whereEqualTo("userId", userId)
                 .orderBy("date", Query.Direction.DESCENDING)

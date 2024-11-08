@@ -299,38 +299,30 @@ public class AddReportActivity extends AppCompatActivity {
         String userId = mAuth.getCurrentUser().getUid();
         String reportId = UUID.randomUUID().toString();
 
-        // Buat approval request sebagai pengganti langsung menyimpan laporan
-        ApprovalRequest approvalRequest = new ApprovalRequest(
-                UUID.randomUUID().toString(), // request ID
+        // Set status awal sebagai pending
+        Report report = new Report(
+                reportId,
+                title,
+                description,
+                amount,
+                date.toDate(),
+                imageUrl,
                 userId,
-                mAuth.getCurrentUser().getDisplayName(),
-                "new", // tipe request
-                new HashMap<String, Object>() {{
-                    put("id", reportId);
-                    put("title", title);
-                    put("description", description);
-                    put("amount", amount);
-                    put("date", date.toDate());
-                    put("imageUrl", imageUrl);
-                    put("userId", userId);
-                    put("status", "pending");
-                }},
-                new Date(),
-                "pending"
+                null // recipientId
         );
+        report.setStatus("pending"); // Tambahkan status pending
 
-        // Simpan ke collection approvalRequests
-        db.collection("approvalRequests")
-                .document(approvalRequest.getId())
-                .set(approvalRequest)
+        db.collection("reports")
+                .document(reportId)
+                .set(report)
                 .addOnSuccessListener(aVoid -> {
-                    // Tambahkan history
+                    // Tambahkan history dengan status pending
                     String historyId = UUID.randomUUID().toString();
                     History history = new History(
                             historyId,
                             reportId,
                             userId,
-                            "pending",
+                            "pending", // Status history juga pending
                             new Date()
                     );
 
@@ -343,11 +335,6 @@ public class AddReportActivity extends AppCompatActivity {
                                 Toast.makeText(this, "Laporan menunggu persetujuan", Toast.LENGTH_SHORT).show();
                                 finish();
                             });
-                })
-                .addOnFailureListener(e -> {
-                    progressBar.setVisibility(View.GONE);
-                    buttonSubmitReport.setEnabled(true);
-                    Toast.makeText(this, "Gagal membuat permintaan: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
     }
 
