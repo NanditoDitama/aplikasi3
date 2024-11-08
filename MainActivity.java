@@ -418,6 +418,7 @@ public class MainActivity extends AppCompatActivity {
                     if (value != null && !value.isEmpty()) {
                         for (QueryDocumentSnapshot document : value) {
                             Report report = document.toObject(Report.class);
+                            report.setId(document.getId());
                             reportsList.add(report);
                         }
                     }

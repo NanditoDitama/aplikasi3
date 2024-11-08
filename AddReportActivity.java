@@ -35,6 +35,7 @@ import com.bumptech.glide.request.target.CustomTarget;
 import com.bumptech.glide.request.transition.Transition;
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
@@ -44,6 +45,7 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 import android.Manifest;
@@ -254,7 +256,7 @@ public class AddReportActivity extends AppCompatActivity {
         progressBar.setVisibility(View.VISIBLE);
         buttonSubmitReport.setEnabled(false);
         Timestamp date = new Timestamp(selectedDate.getTime());
-
+        createApprovalRequest(title, description, amount, selectedDate.getTime(), imageUrl);
         if (selectedImageUri != null) {
             uploadImage(title, description, amount, date);
         } else {
@@ -337,6 +339,49 @@ public class AddReportActivity extends AppCompatActivity {
                             });
                 });
     }
+
+    private void createApprovalRequest(String title, String description, double amount, Date date, String imageUrl) {
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+        if (currentUser == null) {
+            Toast.makeText(this, "Pengguna tidak terautentikasi", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        progressBar.setVisibility(View.VISIBLE);
+        buttonSubmitReport.setEnabled(false);
+
+        // Buat approval request
+        String requestId = UUID.randomUUID().toString();
+        Map<String, Object> requestData = new HashMap<>();
+        requestData.put("id", requestId);
+        requestData.put("title", title);
+        requestData.put("description", description);
+        requestData.put("amount", amount);
+        requestData.put("date", date);
+        requestData.put("imageUrl", imageUrl);
+        requestData.put("userId", currentUser.getUid());
+        requestData.put("status", "pending");
+
+        // Simpan ke approvalRequests
+        db.collection("approvalRequests")
+                .document(requestId)
+                .set(requestData)
+                .addOnSuccessListener(aVoid -> {
+                    progressBar.setVisibility(View.GONE);
+                    buttonSubmitReport.setEnabled(true);
+                    Toast.makeText(this, "Laporan menunggu persetujuan", Toast.LENGTH_SHORT).show();
+                    finish();
+                })
+                .addOnFailureListener(e -> {
+                    progressBar.setVisibility(View.GONE);
+                    buttonSubmitReport.setEnabled(true);
+                    Toast.makeText(this, "Gagal membuat permintaan: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+    }
+
+
+
+
 
 
     private void setupImageClickListeners() {
